@@ -1,0 +1,37 @@
+species,disease,train,val
+Apple,Apple_scab,504,126
+Apple,Black_rot,496,125
+Apple,Cedar_apple_rust,220,55
+Apple,healthy,1316,329
+Blueberry,healthy,1202,300
+Cherry_(including_sour),Powdery_mildew,842,210
+Cherry_(including_sour),healthy,684,170
+Corn_(maize),Cercospora_leaf_spot Gray_leaf_spot,410,103
+Corn_(maize),Common_rust_,953,239
+Corn_(maize),Northern_Leaf_Blight,788,197
+Corn_(maize),healthy,929,233
+Grape,Black_rot,944,236
+Grape,Esca_(Black_Measles),1107,276
+Grape,Leaf_blight_(Isariopsis_Leaf_Spot),861,215
+Grape,healthy,339,84
+Peach,Bacterial_spot,1838,459
+Peach,healthy,288,72
+"Pepper,_bell",Bacterial_spot,797,200
+"Pepper,_bell",healthy,1183,295
+Potato,Early_blight,800,200
+Potato,Late_blight,800,200
+Potato,healthy,121,31
+Raspberry,healthy,297,74
+Soybean,healthy,4072,1018
+Strawberry,Leaf_scorch,887,222
+Strawberry,healthy,364,92
+Tomato,Bacterial_spot,1702,425
+Tomato,Early_blight,800,200
+Tomato,Late_blight,1527,382
+Tomato,Leaf_Mold,761,191
+Tomato,Septoria_leaf_spot,1417,354
+Tomato,Spider_mites Two-spotted_spider_mite,1341,335
+Tomato,Target_Spot,1123,281
+Tomato,Tomato_Yellow_Leaf_Curl_Virus,4286,1071
+Tomato,Tomato_mosaic_virus,299,74
+Tomato,healthy,1273,318

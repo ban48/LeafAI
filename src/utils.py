@@ -37,7 +37,7 @@ def generate_split_csvs(base_dir="data/raw/PlantVillage", output_dir="data"):
             for file_name in os.listdir(class_path):
 
                 # Process only valid image files
-                if file_name.endswith((".jpg", ".jpeg", ".png")):
+                if file_name.lower().endswith((".jpg", ".jpeg", ".png")):
                     img_path = os.path.join(class_path, file_name)
 
                     # Add a row with image path, species, and disease
