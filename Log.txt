@@ -1,0 +1,16 @@
+LOG of important things
+
+06/05
+"PlantVillage" dataset -> good, but some relevant informations about species/diseases are missing. In few words, for some species only "healthy" or "ill" images existed.
+Already divided in training and validation (used as testing) sets.
+
+We decided to delete the species with only "ill" images (orange and squash in outr case). The idea was: is better to unsuccessfully classify a disease rather than wrongly classifying.
+BEFORE: 14 species - 21 diseases (including "healthy")
+DOPO: 12 species - 20 diseases 
+
+Later, for normalization, we needed to compute the mean and the standard deviation of our dataset. After we had computed it, we stored the results here:
+true_mean = [ 0.47131167, 0.49435022, 0.42405355 ]
+true_std = [ 0.17719288, 0.14827244, 0.19360321 ]
+
+08/05
+What's the best kernel size for the gaussian filter? We prrpared a portion of the jupyter paper in which we try different kernel sizes.

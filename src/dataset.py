@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 
-class LeafDatasetCV(Dataset):
+class LeafDataset(Dataset):
     def __init__(self, csv_path, mode='train'):
         """
         Custom dataset that uses OpenCV for image loading and applies augmentations
@@ -31,6 +31,7 @@ class LeafDatasetCV(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
+        print("SONO ENTRATOOOOOOOOOOO")
         """
         Returns a tuple: (normalized image tensor, species_label, disease_label)
         """
