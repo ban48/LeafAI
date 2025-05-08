@@ -4,10 +4,12 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from src.model import DualHeadResNet
 from src.dataset import LeafDataset
+import glob
+
 
 
 class ResnetTrainer:
-    def __init__(self, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3):
+    def __init__(self, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3, checkpoint_path="checkpoints/best_model.pt"):
         # ---------------------------------------------------------------
         # Device selection – supports MPS (Mac), CUDA (NVIDIA), or CPU
         # ---------------------------------------------------------------
@@ -28,8 +30,11 @@ class ResnetTrainer:
         self.val_csv = val_csv
         self.batch_size = batch_size
         self.lr = lr
+        self.checkpoint_path = checkpoint_path
         
         self._setup()
+
+
 
     def _setup(self):
         # ---------------------------------------------------------------
@@ -75,14 +80,33 @@ class ResnetTrainer:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
         # Directory to save best model
-        os.makedirs("checkpoints", exist_ok=True)
-        self.best_val_acc = 0.0
+        os.makedirs(os.path.dirname(self.checkpoint_path), exist_ok=True)
+        self.start_epoch = 0
+        
+        self.best_val_acc_species = 0.0
+        self.best_val_acc_disease = 0.0
+        self.best_val_acc_avg = 0.0
+        
+        # Resume training if checkpoint exists
+        checkpoint_files = sorted(glob.glob("checkpoints/model_epoch_*.pt"), key=os.path.getmtime)
+        if checkpoint_files:
+            latest_ckpt = checkpoint_files[-1]
+            checkpoint = torch.load(latest_ckpt, map_location=self.device)                                              # Loads the checkpoint file and maps the tensors to the current device (CPU, CUDA, MPS)
+            self.model.load_state_dict(checkpoint["model_state_dict"])                                                  # Restores the model weights from the checkpoint
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])                                          # Restores the optimizer state (e.g. learning rate, momentum, etc.) so training resumes correctly
+            self.start_epoch = checkpoint["epoch"] + 1                                                                  # Sets the starting epoch to resume from (we add +1 because epochs are zero-indexed)
+            self.best_val_acc_species = checkpoint["best_val_acc_species"]
+            self.best_val_acc_disease = checkpoint["best_val_acc_disease"]
+            self.best_val_acc_avg = checkpoint["best_val_acc_avg"]
+            print(f"[INFO] Resumed from checkpoint: epoch {self.start_epoch} (best acc: species={self.best_val_acc_species:.4f}, disease={self.best_val_acc_disease:.4f}, avg={self.best_val_acc_avg:.4f})")
+
+        
         
     def training(self, num_epochs=10):
         # ---------------------------------------------------------------
         # Training
         # ---------------------------------------------------------------
-        for epoch in range(num_epochs):
+        for epoch in range(self.start_epoch, self.start_epoch + num_epochs):
             self.model.train()                   # Prepare the model for training (e.g. enables dropout, batchnorm ...)
             running_loss = 0.0
 
@@ -102,9 +126,9 @@ class ResnetTrainer:
                 loss = loss_species + loss_disease
 
                 # Backward and optimize
-                self.optimizer.zero_grad()       # Resets the gradient for each epoch
-                loss.backward()             # Computes the gradient
-                self.optimizer.step()            # Updates the weights of the model
+                self.optimizer.zero_grad()      # Resets the gradient for each epoch
+                loss.backward()                 # Computes the gradient
+                self.optimizer.step()           # Updates the weights of the model
 
                 running_loss += loss.item()
                 
@@ -114,41 +138,73 @@ class ResnetTrainer:
             self.validate(epoch)
 
 
+
     def validate(self, epoch):
-            # --------------------------
-            # Validation loop
-            # --------------------------
-            self.model.eval()                    # Prepare the model for val (e.g. disables dropout, batchnorm ...)
-            correct_species = 0
-            correct_disease = 0
-            total = 0
+        # --------------------------
+        # Validation loop
+        # --------------------------
+        self.model.eval()                    # Prepare the model for val (e.g. disables dropout, batchnorm ...)
+        correct_species = 0
+        correct_disease = 0
+        total = 0
 
-            with torch.no_grad():           # Disables gradient tracking 
-                for images, species_labels, disease_labels in self.val_loader:
-                    images = images.to(self.device)
-                    species_labels = species_labels.to(self.device)
-                    disease_labels = disease_labels.to(self.device)
+        with torch.no_grad():           # Disables gradient tracking 
+            for images, species_labels, disease_labels in self.val_loader:
+                images = images.to(self.device)
+                species_labels = species_labels.to(self.device)
+                disease_labels = disease_labels.to(self.device)
 
-                    species_logits, disease_logits = self.model(images)
+                species_logits, disease_logits = self.model(images)
 
-                    # Get predictions - Takes the index of the highest logit (predicted class)
-                    _, pred_species = torch.max(species_logits, 1)      
-                    _, pred_disease = torch.max(disease_logits, 1)
+                # Get predictions - Takes the index of the highest logit (predicted class)
+                _, pred_species = torch.max(species_logits, 1)      
+                _, pred_disease = torch.max(disease_logits, 1)
 
-                    correct_species += (pred_species == species_labels).sum().item()
-                    correct_disease += (pred_disease == disease_labels).sum().item()
-                    total += species_labels.size(0)
+                correct_species += (pred_species == species_labels).sum().item()
+                correct_disease += (pred_disease == disease_labels).sum().item()
+                total += species_labels.size(0)
 
-            acc_species = correct_species / total
-            acc_disease = correct_disease / total
-            avg_val_acc = (acc_species + acc_disease) / 2
+        acc_species = correct_species / total
+        acc_disease = correct_disease / total
+        avg_val_acc = (acc_species + acc_disease) / 2
 
-            print(f"[Epoch {epoch+1}] Val Accuracy - Species: {acc_species:.4f} | Disease: {acc_disease:.4f}")
+        print(f"[Epoch {epoch+1}] Val Accuracy - Species: {acc_species:.4f} | Disease: {acc_disease:.4f}")
 
-            # --------------------------
-            # Save best model checkpoint
-            # --------------------------
-            if avg_val_acc > self.best_val_acc:
-                self.best_val_acc = avg_val_acc
-                torch.save(self.model.state_dict(), "checkpoints/best_model.pt")
-                print(f"Best model saved with accuracy: {self.best_val_acc:.4f}")
+        # --------------------------
+        # Save best model checkpoint
+        # --------------------------
+        if avg_val_acc > self.best_val_acc_avg:
+            self.best_val_acc_avg = avg_val_acc
+            self.best_val_acc_species = acc_species
+            self.best_val_acc_disease = acc_disease
+            print(f"[INFO] New best accuracy - Species: {self.best_val_acc_species:.4f} | Disease: {self.best_val_acc_disease:.4f} | Avg: {self.best_val_acc_avg:.4f}")
+
+        checkpoint_name = f"checkpoints/model_epoch_{epoch+1}.pt"
+        torch.save({
+            "epoch": epoch,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+            "actual_val_acc_species": acc_species,
+            "actual_val_acc_disease": acc_disease,
+            "actual_val_avg_acc": avg_val_acc,
+            "best_val_acc_species": self.best_val_acc_species,
+            "best_val_acc_disease": self.best_val_acc_disease,
+            "best_val_acc_avg": self.best_val_acc_avg,
+        }, checkpoint_name)
+        print(f"[INFO] Checkpoint saved: {checkpoint_name} acc_species: {acc_species} acc_disease: {acc_disease} acc_average: {avg_val_acc}")
+            
+            
+            
+    def list_all_checkpoints(self):
+        checkpoint_files = sorted(glob.glob("checkpoints/model_epoch_*.pt"))
+        print("\n[INFO] Saved checkpoints:")
+        for file in checkpoint_files:
+            checkpoint = torch.load(file, map_location="cpu")
+            print(f" - {file}:")
+            print(f"     Epoch:              {checkpoint['epoch']+1}")
+            print(f"     Val Accuracy (Species):  {checkpoint['actual_val_acc_species']:.4f}")
+            print(f"     Val Accuracy (Disease): {checkpoint['actual_val_acc_disease']:.4f}")
+            print(f"     Val Accuracy (Avgerage): {checkpoint['actual_val_avg_acc']:.4f}")
+            print(f"     Best Accuracy (Species):{checkpoint['best_val_acc_species']:.4f}")
+            print(f"     Best Accuracy (Disease):{checkpoint['best_val_acc_disease']:.4f}")
+            print(f"     Best Accuracy (Avgerage):{checkpoint['best_val_acc_avg']:.4f}")
