@@ -68,7 +68,7 @@ class LeafDataset(Dataset):
         img = (img - self.mean) / self.std
 
         # Convert to torch tensor [C, H, W]
-        img = torch.from_numpy(img).permute(2, 0, 1)
+        img = torch.from_numpy(img.astype(np.float32)).permute(2, 0, 1)
 
         species_idx = self.species2idx[row['species']]
         disease_idx = self.disease2idx[row['disease']]

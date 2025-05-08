@@ -16,7 +16,9 @@ def main():
 
     # STEP 1 - Continue with training pipeline, dataset loading, etc.
     print("[INFO] Main script is running...")
-    tr._testPreProcessing()
+    
+    trainer = tr.ResnetTrainer()
+    trainer.training(2)
     
     
 
