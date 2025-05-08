@@ -18,10 +18,16 @@ class LeafDataset(Dataset):
         self.mode = mode
 
         # Label encoders
-        self.species_list = sorted(self.df['species'].unique())
-        self.disease_list = sorted(self.df['disease'].unique())
-        self.species2idx = {label: idx for idx, label in enumerate(self.species_list)}
-        self.disease2idx = {label: idx for idx, label in enumerate(self.disease_list)}
+        self.species_list = sorted(self.df['species'].unique()) # Takes all the species and orders them alphabetically
+        self.disease_list = sorted(self.df['disease'].unique()) # Takes all the disease and orders them alphabetically
+
+        self.species2idx = {}
+        for idx, label in enumerate(self.species_list):
+            self.species2idx[label] = idx                   # Creates a dictionary mapping all the species to a integer and uniqe value
+
+        self.disease2idx = {}
+        for idx, label in enumerate(self.disease_list):     # Creates a dictionary mapping all the disease to a integer and uniqe value
+            self.disease2idx[label] = idx
 
         # Dataset-specific mean and std (R, G, B)
         self.mean = np.array([0.47131167, 0.49435022, 0.42405355])
@@ -30,8 +36,18 @@ class LeafDataset(Dataset):
     def __len__(self):
         return len(self.df)
 
+    # --------------------------------------------------------------
+    # __getitem__ is called automatically by the DataLoader.
+    # 
+    # It receives an index (idx), retrieves the corresponding row 
+    # from the CSV, loads the image, applies preprocessing and 
+    # augmentation (if in training mode), normalizes the image, 
+    # converts it to a tensor, and returns a tuple:
+    # 
+    #   (image_tensor, species_index, disease_index)
+    # --------------------------------------------------------------
+    
     def __getitem__(self, idx):
-        print("SONO ENTRATOOOOOOOOOOO")
         """
         Returns a tuple: (normalized image tensor, species_label, disease_label)
         """
@@ -45,7 +61,8 @@ class LeafDataset(Dataset):
 
         if self.mode == 'train':
             img = self.apply_augmentations(img)
-
+            img = self.gaussian_blur(img)
+        
         # Convert to float and normalize
         img = img.astype(np.float32) / 255.0
         img = (img - self.mean) / self.std
@@ -89,3 +106,6 @@ class LeafDataset(Dataset):
         img = np.clip((img.astype(np.float32) - mean) * contrast_factor + mean, 0, 255).astype(np.uint8)
 
         return img
+    
+    def gaussian_blur(self, img):
+        return cv2.GaussianBlur(img, (3, 3), 0, cv2.BORDER_DEFAULT)
