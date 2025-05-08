@@ -1,7 +1,7 @@
 import os             
 import pandas as pd     
 
-def generate_split_csvs(base_dir="data/raw/PlantVillage", output_dir="data"):
+def generate_split_csvs(base_dir="data/raw/PlantVillage/", output_dir="data"):
     """
     Generates two CSV files (train.csv and val.csv) 
 
@@ -14,7 +14,7 @@ def generate_split_csvs(base_dir="data/raw/PlantVillage", output_dir="data"):
     """
 
     # Loop through each split (train and val)
-    for split in ["train", "val"]:
+    for split in ["/train", "/val"]:
         rows = []  # This list will store data for the current split
 
         # Path to the current split folder
