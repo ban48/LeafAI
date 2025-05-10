@@ -18,7 +18,8 @@ def main():
     print("[INFO] Main script is running...")
     
     trainer = tr.ResnetTrainer()
-    trainer.training(2)
+    # trainer.training(2)
+    # trainer.list_all_checkpoints()
     
     
 

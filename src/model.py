@@ -39,7 +39,11 @@ class DualHeadResNet(nn.Module):
                 - species_logits: [B, num_species_classes]
                 - disease_logits: [B, num_disease_classes]
         """
+        # Network fed with input batch
         features = self.backbone(x)
+
+        # Final probabilities vectors for species and diseases 
         species_logits = self.species_head(features)
         disease_logits = self.disease_head(features)
+        
         return species_logits, disease_logits

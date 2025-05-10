@@ -1,0 +1,10 @@
+pandas
+numpy
+cv2 
+torch
+torchvision
+os
+glob
+matplotlib
+seaborn
+tqdm

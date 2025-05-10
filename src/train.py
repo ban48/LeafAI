@@ -10,6 +10,18 @@ import glob
 
 class ResnetTrainer:
     def __init__(self, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3, checkpoint_path="checkpoints/best_model.pt"):
+        """
+        Training class specifically for our ResNet-18
+
+        Args:
+            train_csv (str): Path training CSV file
+            val_csv (str): Path validation CSV file
+            batch_size (int): Size of input batch (number of input images at time)
+            lr (float): Learning rate for parameters optimization
+            checkpoint_path (str): Directory in wich checkpoints are saved
+        
+        """
+
         # ---------------------------------------------------------------
         # Device selection – supports MPS (Mac), CUDA (NVIDIA), or CPU
         # ---------------------------------------------------------------
@@ -43,6 +55,7 @@ class ResnetTrainer:
         train_dataset = LeafDataset(csv_path=self.train_csv, mode="train")
         val_dataset   = LeafDataset(csv_path=self.val_csv, mode="val")
 
+
         # ---------------------------------------------------------------
         # Create DataLoaders
 
@@ -64,19 +77,21 @@ class ResnetTrainer:
         self.train_loader = DataLoader(train_dataset, self.batch_size, shuffle=True, num_workers=4)
         self.val_loader   = DataLoader(val_dataset, self.batch_size, shuffle=False, num_workers=4)
 
+
         # ---------------------------------------------------------------
         # Model, Loss and Optimizer Setup
         # ---------------------------------------------------------------
-
         num_species = len(train_dataset.species2idx)
         num_disease = len(train_dataset.disease2idx)
 
+        # Initialization of the ResNet model
         self.model = DualHeadResNet(num_species_classes=num_species, num_disease_classes=num_disease)
         self.model.to(self.device)
 
         self.loss_species_calc = nn.CrossEntropyLoss() 
         self.loss_diseases_calc = nn.CrossEntropyLoss() 
 
+        # Used Adam as GD
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
         # Directory to save best model
@@ -91,10 +106,10 @@ class ResnetTrainer:
         checkpoint_files = sorted(glob.glob("checkpoints/model_epoch_*.pt"), key=os.path.getmtime)
         if checkpoint_files:
             latest_ckpt = checkpoint_files[-1]
-            checkpoint = torch.load(latest_ckpt, map_location=self.device)                                              # Loads the checkpoint file and maps the tensors to the current device (CPU, CUDA, MPS)
-            self.model.load_state_dict(checkpoint["model_state_dict"])                                                  # Restores the model weights from the checkpoint
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])                                          # Restores the optimizer state (e.g. learning rate, momentum, etc.) so training resumes correctly
-            self.start_epoch = checkpoint["epoch"] + 1                                                                  # Sets the starting epoch to resume from (we add +1 because epochs are zero-indexed)
+            checkpoint = torch.load(latest_ckpt, map_location=self.device)                       # Loads the checkpoint file and maps the tensors to the current device (CPU, CUDA, MPS)
+            self.model.load_state_dict(checkpoint["model_state_dict"])                           # Restores the model weights from the checkpoint
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])                   # Restores the optimizer state (e.g. learning rate, momentum, etc.) so training resumes correctly
+            self.start_epoch = checkpoint["epoch"] + 1                                           # Sets the starting epoch to resume from (we add +1 because epochs are zero-indexed)
             self.best_val_acc_species = checkpoint["best_val_acc_species"]
             self.best_val_acc_disease = checkpoint["best_val_acc_disease"]
             self.best_val_acc_avg = checkpoint["best_val_acc_avg"]
@@ -107,7 +122,9 @@ class ResnetTrainer:
         # Training
         # ---------------------------------------------------------------
         for epoch in range(self.start_epoch, self.start_epoch + num_epochs):
-            self.model.train()                   # Prepare the model for training (e.g. enables dropout, batchnorm ...)
+
+            # Prepare the model for training (e.g. enables dropout, batchnorm ...)
+            self.model.train()                   
             running_loss = 0.0
 
             for images, species_labels, disease_labels in self.train_loader:
@@ -143,7 +160,9 @@ class ResnetTrainer:
         # --------------------------
         # Validation loop
         # --------------------------
-        self.model.eval()                    # Prepare the model for val (e.g. disables dropout, batchnorm ...)
+
+        # Prepare the model for val (e.g. disables dropout, batchnorm ...)
+        self.model.eval()                    
         correct_species = 0
         correct_disease = 0
         total = 0
@@ -169,6 +188,7 @@ class ResnetTrainer:
         avg_val_acc = (acc_species + acc_disease) / 2
 
         print(f"[Epoch {epoch+1}] Val Accuracy - Species: {acc_species:.4f} | Disease: {acc_disease:.4f}")
+
 
         # --------------------------
         # Save best model checkpoint
@@ -196,8 +216,12 @@ class ResnetTrainer:
             
             
     def list_all_checkpoints(self):
+        # ------------------------------
+        # Show all my checkpoints
+        # ------------------------------
         checkpoint_files = sorted(glob.glob("checkpoints/model_epoch_*.pt"))
         print("\n[INFO] Saved checkpoints:")
+        
         for file in checkpoint_files:
             checkpoint = torch.load(file, map_location="cpu")
             print(f" - {file}:")

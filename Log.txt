@@ -8,9 +8,30 @@ We decided to delete the species with only "ill" images (orange and squash in ou
 BEFORE: 14 species - 21 diseases (including "healthy")
 DOPO: 12 species - 20 diseases 
 
-Later, for normalization, we needed to compute the mean and the standard deviation of our dataset. After we had computed it, we stored the results here:
+Later, for image normalization, we needed to compute the mean and the standard deviation of our dataset. After we had computed it, we stored the results here:
 true_mean = [ 0.47131167, 0.49435022, 0.42405355 ]
 true_std = [ 0.17719288, 0.14827244, 0.19360321 ]
 
+
 08/05
 What's the best kernel size for the gaussian filter? We prrpared a portion of the jupyter paper in which we try different kernel sizes.
+We decided to use a Kernel 3x3, looking at the different results made by different other kernels (5x5 or 7x7).
+
+For the pre-processing part, we applied:
+- Resize, obtaining a fixed size for every image (224, 224), so the image can be used for CNN
+- Gaussian Blur, as mentioned, for every image in the dataset
+- Augmentation, applying rotation, flips and HSV adjustments every time in a different way (random transformations)
+
+IMPORTANT!!
+These transformations (gaussian blur and augmentation) are applied EVERY TIME WE TRAIN the architecture, so "on-the-fly". This has different advantages, 
+like less-storage usage and exploit different images every time(in an extreme point of view, is like using an "infinite" amount of data, since the images are slightly different every time). 
+
+
+10/05
+We decided to use a ResNet-18 for our first attempt of training/validation, making some changes from the original architecture:
+- Last FC split: we put the original FC of the network equal to the identity network, then we created two different FC, one for species and the other for diseases.
+- Loss: Cross-Entropy updated separetly, but unified (sum) for backpropagation (so weights update)
+- Checkpoint storage: every epoch done during training/validation is stored into a specific file, keeping the last epoch done, in order to resume the training from the last 
+    parameters computed in the i-th epoch
+After only 10 epochs, with different devices (Mac Pro with 'mps' GPU and Windows notebook with Nvidia GPU), 
+we obtained an interesting (and good) result: ~93% average accuracy for both species and disease. Other tests must be done with different architectures (CLIP, DINOv2) to compare results.

@@ -7,8 +7,7 @@ from torch.utils.data import Dataset
 class LeafDataset(Dataset):
     def __init__(self, csv_path, mode='train'):
         """
-        Custom dataset that uses OpenCV for image loading and applies augmentations
-        consistent with the visualization logic used in the notebook.
+        Custom dataset that uses OpenCV for image loading and applies augmentations.
 
         Args:
             csv_path (str): Path to the CSV file (train or val).
@@ -21,12 +20,14 @@ class LeafDataset(Dataset):
         self.species_list = sorted(self.df['species'].unique()) # Takes all the species and orders them alphabetically
         self.disease_list = sorted(self.df['disease'].unique()) # Takes all the disease and orders them alphabetically
 
+        # Creates a dictionary mapping all the species to a integer and uniqe value
         self.species2idx = {}
         for idx, label in enumerate(self.species_list):
-            self.species2idx[label] = idx                   # Creates a dictionary mapping all the species to a integer and uniqe value
+            self.species2idx[label] = idx                   
 
+        # Creates a dictionary mapping all the disease to a integer and uniqe value
         self.disease2idx = {}
-        for idx, label in enumerate(self.disease_list):     # Creates a dictionary mapping all the disease to a integer and uniqe value
+        for idx, label in enumerate(self.disease_list):
             self.disease2idx[label] = idx
 
         # Dataset-specific mean and std (R, G, B)
@@ -50,6 +51,9 @@ class LeafDataset(Dataset):
     def __getitem__(self, idx):
         """
         Returns a tuple: (normalized image tensor, species_label, disease_label)
+
+        Args:
+            idx (int): Index of the corresponding image row from the CSV, containing 3 columns (filepath, species, disease)
         """
         row = self.df.iloc[idx]
         img_path = row['filepath']
@@ -59,6 +63,7 @@ class LeafDataset(Dataset):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (224, 224))
 
+        # If in training mode, apply tranformations
         if self.mode == 'train':
             img = self.apply_augmentations(img)
             img = self.gaussian_blur(img)
@@ -78,6 +83,9 @@ class LeafDataset(Dataset):
     def apply_augmentations(self, img):
         """
         Apply augmentations
+
+        Args:
+            img (MatLike): Image opened by opencv
         """
         # Horizontal flip
         if np.random.rand() < 0.5:
