@@ -2,14 +2,13 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from src.model import DualHeadResNet
 from src.dataset import LeafDataset
 import glob
 
 
 
-class ResnetTrainer:
-    def __init__(self, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3, checkpoint_path="checkpoints/best_model.pt"):
+class TrainerTorchModels:
+    def __init__(self, model, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3):
         """
         Training class specifically for our ResNet-18
 
@@ -36,13 +35,24 @@ class ResnetTrainer:
             print("[INFO] Using CPU (no GPU detected)")
 
         # ---------------------------------------------------------------
-        # Paths to CSVs
+        # Init
         # ---------------------------------------------------------------
+        self.model = model
         self.train_csv = train_csv
         self.val_csv = val_csv
         self.batch_size = batch_size
         self.lr = lr
-        self.checkpoint_path = checkpoint_path
+        self.patience = 5
+        self.early_stop_counter = 0
+        
+        # Get model name from class
+        self.model_name = model.get_name()
+        self.checkpoint_dir = f"checkpoints/{self.model_name}"
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+
+        # Paths
+        self.log_path = os.path.join(self.checkpoint_dir, "training_log.pt")
+        self.param_path = os.path.join(self.checkpoint_dir, "best_model.pt")
         
         self._setup()
 
@@ -81,11 +91,6 @@ class ResnetTrainer:
         # ---------------------------------------------------------------
         # Model, Loss and Optimizer Setup
         # ---------------------------------------------------------------
-        num_species = len(train_dataset.species2idx)
-        num_disease = len(train_dataset.disease2idx)
-
-        # Initialization of the ResNet model
-        self.model = DualHeadResNet(num_species_classes=num_species, num_disease_classes=num_disease)
         self.model.to(self.device)
 
         self.loss_species_calc = nn.CrossEntropyLoss() 
@@ -94,19 +99,15 @@ class ResnetTrainer:
         # Used Adam as GD
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
-        # Directory to save best model
-        os.makedirs(os.path.dirname(self.checkpoint_path), exist_ok=True)
-        self.start_epoch = 0
-        
+
+        self.start_epoch = 0 
         self.best_val_acc_species = 0.0
         self.best_val_acc_disease = 0.0
         self.best_val_acc_avg = 0.0
         
         # Resume training if checkpoint exists
-        checkpoint_files = sorted(glob.glob("checkpoints/model_epoch_*.pt"), key=os.path.getmtime)
-        if checkpoint_files:
-            latest_ckpt = checkpoint_files[-1]
-            checkpoint = torch.load(latest_ckpt, map_location=self.device)                       # Loads the checkpoint file and maps the tensors to the current device (CPU, CUDA, MPS)
+        if os.path.exists(self.param_path):
+            checkpoint = torch.load(self.param_path, map_location=self.device)                   # Loads the checkpoint file and maps the tensors to the current device (CPU, CUDA, MPS)
             self.model.load_state_dict(checkpoint["model_state_dict"])                           # Restores the model weights from the checkpoint
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])                   # Restores the optimizer state (e.g. learning rate, momentum, etc.) so training resumes correctly
             self.start_epoch = checkpoint["epoch"] + 1                                           # Sets the starting epoch to resume from (we add +1 because epochs are zero-indexed)
@@ -193,25 +194,45 @@ class ResnetTrainer:
         # --------------------------
         # Save best model checkpoint
         # --------------------------
+        # Save model parameters only if it's the best so far
         if avg_val_acc > self.best_val_acc_avg:
             self.best_val_acc_avg = avg_val_acc
             self.best_val_acc_species = acc_species
             self.best_val_acc_disease = acc_disease
-            print(f"[INFO] New best accuracy - Species: {self.best_val_acc_species:.4f} | Disease: {self.best_val_acc_disease:.4f} | Avg: {self.best_val_acc_avg:.4f}")
-
-        checkpoint_name = f"checkpoints/model_epoch_{epoch+1}.pt"
+            torch.save({
+                "epoch": epoch,
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "best_val_acc_species": self.best_val_acc_species,
+                "best_val_acc_disease": self.best_val_acc_disease,
+                "best_val_acc_avg": self.best_val_acc_avg,
+            }, self.param_path)
+            print(f"[INFO] New best model saved to {self.param_path}")
+        
+        # Save training log of current epoch (no model weights)
+        log_path = os.path.join(self.checkpoint_dir, f"log_epoch_{epoch+1}.pt")
         torch.save({
             "epoch": epoch,
-            "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict(),
             "actual_val_acc_species": acc_species,
             "actual_val_acc_disease": acc_disease,
             "actual_val_avg_acc": avg_val_acc,
             "best_val_acc_species": self.best_val_acc_species,
             "best_val_acc_disease": self.best_val_acc_disease,
             "best_val_acc_avg": self.best_val_acc_avg,
-        }, checkpoint_name)
-        print(f"[INFO] Checkpoint saved: {checkpoint_name} acc_species: {acc_species} acc_disease: {acc_disease} acc_average: {avg_val_acc}")
+        }, log_path)
+        print(f"[INFO] Checkpoint saved: {epoch} acc_species: {acc_species} acc_disease: {acc_disease} acc_average: {avg_val_acc}")
+            
+        # Early stopping logic
+        if avg_val_acc <= self.best_val_acc_avg:
+            self.early_stop_counter += 1
+            print(f"[INFO] No improvement. Early stop counter: {self.early_stop_counter}/{self.patience}")
+            if self.early_stop_counter >= self.patience:
+                print("[INFO] Early stopping triggered.")
+                exit(0)
+        else:
+            self.early_stop_counter = 0
+            
+        
             
             
             
@@ -219,7 +240,7 @@ class ResnetTrainer:
         # ------------------------------
         # Show all my checkpoints
         # ------------------------------
-        checkpoint_files = sorted(glob.glob("checkpoints/model_epoch_*.pt"))
+        checkpoint_files = sorted(glob.glob(os.path.join(self.checkpoint_dir, "log_epoch_*.pt")))
         print("\n[INFO] Saved checkpoints:")
         
         for file in checkpoint_files:
