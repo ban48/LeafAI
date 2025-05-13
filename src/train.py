@@ -13,12 +13,11 @@ class Trainer:
         Training class specifically for our ResNet-18
 
         Args:
+            model (Module): model we want to train (ResNet, ViT, CLIP or DINOv2)
             train_csv (str): Path training CSV file
             val_csv (str): Path validation CSV file
             batch_size (int): Size of input batch (number of input images at time)
             lr (float): Learning rate for parameters optimization
-            checkpoint_path (str): Directory in wich checkpoints are saved
-        
         """
 
         # ---------------------------------------------------------------
@@ -42,16 +41,15 @@ class Trainer:
         self.val_csv = val_csv
         self.batch_size = batch_size
         self.lr = lr
-        self.patience = 5
+        self.patience = 5               # For early stopping
         self.early_stop_counter = 0
         
-        # Get model name from class
+        # Get model name from class and create specific checkpoint dir
         self.model_name = model.get_name()
         self.checkpoint_dir = f"checkpoints/{self.model_name}"
         os.makedirs(self.checkpoint_dir, exist_ok=True)
 
-        # Paths
-        self.log_path = os.path.join(self.checkpoint_dir, "training_log.pt")
+        # Path to resume the best parameters for the current model
         self.param_path = os.path.join(self.checkpoint_dir, "best_model.pt")
         
         self._setup()
@@ -98,7 +96,6 @@ class Trainer:
 
         # Used Adam as GD
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
-
 
         self.start_epoch = 0 
         self.best_val_acc_species = 0.0
@@ -158,9 +155,9 @@ class Trainer:
 
 
     def validate(self, epoch):
-        # --------------------------
-        # Validation loop
-        # --------------------------
+        # -----------------------------
+        # Validation
+        # -----------------------------
 
         # Prepare the model for val (e.g. disables dropout, batchnorm ...)
         self.model.eval()                    
@@ -200,9 +197,11 @@ class Trainer:
         else:
             self.early_stop_counter = 0
 
-        # --------------------------
+
+        # ---------------------------------------------
         # Save best model checkpoint
-        # --------------------------
+        # ---------------------------------------------
+
         # Save model parameters only if it's the best so far
         if avg_val_acc > self.best_val_acc_avg:
             self.best_val_acc_avg = avg_val_acc
@@ -232,13 +231,12 @@ class Trainer:
         print(f"[INFO] Checkpoint saved: {epoch} acc_species: {acc_species} acc_disease: {acc_disease} acc_average: {avg_val_acc}")
             
         
-            
-            
-            
+                  
     def list_all_checkpoints(self):
-        # ------------------------------
-        # Show all my checkpoints
-        # ------------------------------
+        """
+        Show all my checkpoints for the current model
+
+        """
         checkpoint_files = sorted(glob.glob(os.path.join(self.checkpoint_dir, "log_epoch_*.pt")))
         print("\n[INFO] Saved checkpoints:")
         

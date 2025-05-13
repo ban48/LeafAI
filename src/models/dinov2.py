@@ -6,6 +6,11 @@ class DualHeadDINOv2(nn.Module):
     def __init__(self, num_species_classes, num_disease_classes, model_name="facebook/dinov2-base"):
         """
         Custom model using DINOv2 as frozen feature extractor with two classification heads.
+
+        Args:
+            num_species_classes (int): number of species classes
+            num_disease_classes (int): number of disease classes
+            model_name (str): DINOv2 variant
         """
         super(DualHeadDINOv2, self).__init__()
         self.model_name = "DINOv2"
@@ -14,30 +19,36 @@ class DualHeadDINOv2(nn.Module):
         self.processor = AutoImageProcessor.from_pretrained(model_name)
         self.backbone = Dinov2Model.from_pretrained(model_name)
 
-        # Freeze all DINOv2 parameters
+        # Freeze all the parameters of DINOv2
         for param in self.backbone.parameters():
             param.requires_grad = False
 
-        # Get the embedding dimension of the [CLS] token
+        # Get the dimensionality of the image embeddings
         hidden_size = self.backbone.config.hidden_size
 
-        # Two separate classification heads
+        # Add two separate classification heads
         self.species_head = nn.Linear(hidden_size, num_species_classes)
         self.disease_head = nn.Linear(hidden_size, num_disease_classes)
 
     def forward(self, x):
         """
-        Forward pass through DINOv2 and classification heads.
+        Forward pass through frozen DINOv2 and classification heads.
+
         Args:
-            x (Tensor): input images [B, 3, H, W]
+            x (Tensor): input images [B, 3, 224, 224]
 
         Returns:
-            Tuple[Tensor, Tensor]: species_logits, disease_logits
+            Tuple[Tensor, Tensor]:
+                - species_logits: [B, num_species_classes]
+                - disease_logits: [B, num_disease_classes]
         """
+
+        # Frozen CLIP backbone (gradient not computed)
         with torch.no_grad():
             outputs = self.backbone(x)
-            features = outputs.last_hidden_state[:, 0, :]  # Use [CLS] token
+            features = outputs.last_hidden_state[:, 0, :]  # Use [CLS] token for classification - not automatically managed
 
+        # Final probabilities vectors for species and diseases
         species_logits = self.species_head(features)
         disease_logits = self.disease_head(features)
         return species_logits, disease_logits

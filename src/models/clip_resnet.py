@@ -5,13 +5,13 @@ import open_clip
 class DualHeadCLIPResNet(nn.Module):
     def __init__(self, num_species_classes, num_disease_classes, clip_model_name="RN50", pretrained="openai"):
         """
-        Custom model using CLIP (ResNet) as frozen backbone and two classification heads.
+        Custom model using CLIP (ResNet) as frozen backbone and two classification heads. Only the image part is used.
 
         Args:
             num_species_classes (int): number of species classes
             num_disease_classes (int): number of disease classes
-            clip_model_name (str): CLIP backbone variant, e.g. "RN50"
-            pretrained (str): which pretrained weights to use (usually "openai")
+            clip_model_name (str): CLIP backbone variant (ResNet50 in this case)
+            pretrained (str): which pretrained weights to use
         """
         super(DualHeadCLIPResNet, self).__init__()
         self.model_name = "CLIPResNet"
@@ -23,10 +23,10 @@ class DualHeadCLIPResNet(nn.Module):
         for param in self.clip_model.parameters():
             param.requires_grad = False
 
-        # Get the dimensionality of the image embeddings
-        embed_dim = self.clip_model.visual.output_dim  # e.g., 1024 for RN50
+        # Get the dimensionality of the image embeddings, e.g. 1024 for RN50
+        embed_dim = self.clip_model.visual.output_dim
 
-        # Add two trainable classification heads
+        # Add two separate classification heads
         self.species_head = nn.Linear(embed_dim, num_species_classes)
         self.disease_head = nn.Linear(embed_dim, num_disease_classes)
 
@@ -38,14 +38,20 @@ class DualHeadCLIPResNet(nn.Module):
             x (Tensor): input images [B, 3, 224, 224]
 
         Returns:
-            Tuple[Tensor, Tensor]: species_logits, disease_logits
+            Tuple[Tensor, Tensor]:
+                - species_logits: [B, num_species_classes]
+                - disease_logits: [B, num_disease_classes]
         """
-        with torch.no_grad():
-            features = self.clip_model.encode_image(x)  # frozen CLIP backbone
 
+        # Frozen CLIP backbone (gradient not computed)
+        with torch.no_grad():
+            features = self.clip_model.encode_image(x)
+
+        # Final probabilities vectors for species and diseases 
         species_logits = self.species_head(features)
         disease_logits = self.disease_head(features)
         return species_logits, disease_logits
-    
+
+
     def get_name(self):
         return self.model_name
