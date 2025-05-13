@@ -1,6 +1,7 @@
 # main.py
 
 # Import function to generate CSVs from dataset folders
+from src.models.dinov2 import DualHeadDINOv2
 from src.models.clip_vit import DualHeadCLIPViT
 from src.models.clip_resnet import DualHeadCLIPResNet
 from src.models.resnet18 import DualHeadResNet
@@ -21,7 +22,7 @@ def main():
     # STEP 1 - Continue with training pipeline, dataset loading, etc.
     print("[INFO] Main script is running...")
     
-    model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)
+    model = DualHeadDINOv2(num_species_classes=12, num_disease_classes=20)
     trainer = tr.Trainer(model)
     trainer.training(1)
     trainer.list_all_checkpoints()
