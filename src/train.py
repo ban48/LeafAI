@@ -7,7 +7,7 @@ import glob
 
 
 
-class TrainerTorchModels:
+class Trainer:
     def __init__(self, model, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3):
         """
         Training class specifically for our ResNet-18

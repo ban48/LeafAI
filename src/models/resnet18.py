@@ -13,7 +13,7 @@ class DualHeadResNet(nn.Module):
             num_disease_classes (int): number of unique diseases
         """
         super(DualHeadResNet, self).__init__()
-        self.model_name = "Resnet18"
+        self.model_name = "ResNet18"
 
         # Load pretrained ResNet18 from torchvision
         self.backbone = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
