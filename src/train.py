@@ -62,8 +62,8 @@ class Trainer:
         # ---------------------------------------------------------------
         # Instantiate datasets
         # ---------------------------------------------------------------
-        train_dataset = LeafDataset(csv_path=self.train_csv, mode="train")
-        val_dataset   = LeafDataset(csv_path=self.val_csv, mode="val")
+        train_dataset = LeafDataset(self.model_name, csv_path=self.train_csv, mode="train")
+        val_dataset   = LeafDataset(self.model_name, csv_path=self.val_csv, mode="val")
 
 
         # ---------------------------------------------------------------

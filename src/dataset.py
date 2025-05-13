@@ -5,7 +5,7 @@ import numpy as np
 from torch.utils.data import Dataset
 
 class LeafDataset(Dataset):
-    def __init__(self, csv_path, mode='train'):
+    def __init__(self, dataset_type, csv_path, mode='train'):
         """
         Custom dataset that uses OpenCV for image loading and applies augmentations.
 
@@ -31,11 +31,19 @@ class LeafDataset(Dataset):
             self.disease2idx[label] = idx
 
         # Dataset-specific mean and std (R, G, B)
-        self.mean = np.array([0.47131167, 0.49435022, 0.42405355])
-        self.std  = np.array([0.17719288, 0.14827244, 0.19360321])
+        if (dataset_type == "ResNet18" or dataset_type == "ViT" or dataset_type == "DINOv2"):
+            self.mean=[0.485, 0.456, 0.406]
+            self.std=[0.229, 0.224, 0.225]
+        elif (dataset_type == "CLIPResNet" or dataset_type == "CLIPViT"):
+            self.mean=[0.4815, 0.4578, 0.4082]
+            self.std=[0.2686, 0.2613, 0.2758]
+        else:
+            self.mean=[0.46986786, 0.49171314, 0.42178439]
+            self.std=[0.17823954, 0.14965313, 0.19491802]
 
     def __len__(self):
         return len(self.df)
+
 
     # --------------------------------------------------------------
     # __getitem__ is called automatically by the DataLoader.
@@ -47,7 +55,6 @@ class LeafDataset(Dataset):
     # 
     #   (image_tensor, species_index, disease_index)
     # --------------------------------------------------------------
-    
     def __getitem__(self, idx):
         """
         Returns a tuple: (normalized image tensor, species_label, disease_label)
