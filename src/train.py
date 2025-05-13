@@ -190,6 +190,15 @@ class Trainer:
 
         print(f"[Epoch {epoch+1}] Val Accuracy - Species: {acc_species:.4f} | Disease: {acc_disease:.4f}")
 
+        # Early stopping logic
+        if avg_val_acc <= self.best_val_acc_avg:
+            self.early_stop_counter += 1
+            print(f"[INFO] No improvement. Early stop counter: {self.early_stop_counter}/{self.patience}")
+            if self.early_stop_counter >= self.patience:
+                print("[INFO] Early stopping triggered.")
+                exit(0)
+        else:
+            self.early_stop_counter = 0
 
         # --------------------------
         # Save best model checkpoint
@@ -221,16 +230,6 @@ class Trainer:
             "best_val_acc_avg": self.best_val_acc_avg,
         }, log_path)
         print(f"[INFO] Checkpoint saved: {epoch} acc_species: {acc_species} acc_disease: {acc_disease} acc_average: {avg_val_acc}")
-            
-        # Early stopping logic
-        if avg_val_acc <= self.best_val_acc_avg:
-            self.early_stop_counter += 1
-            print(f"[INFO] No improvement. Early stop counter: {self.early_stop_counter}/{self.patience}")
-            if self.early_stop_counter >= self.patience:
-                print("[INFO] Early stopping triggered.")
-                exit(0)
-        else:
-            self.early_stop_counter = 0
             
         
             

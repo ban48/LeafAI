@@ -21,9 +21,9 @@ def main():
     # STEP 1 - Continue with training pipeline, dataset loading, etc.
     print("[INFO] Main script is running...")
     
-    model = DualHeadCLIPViT(num_species_classes=12, num_disease_classes=20)
+    model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)
     trainer = tr.Trainer(model)
-    trainer.training(3)
+    trainer.training(1)
     trainer.list_all_checkpoints()
     
     
