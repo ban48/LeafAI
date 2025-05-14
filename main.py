@@ -18,6 +18,9 @@ from src.dataset import LeafDataset
 import src.train as tr
 
 def main():
+    
+    print("[INFO] Main script is running...")
+    
     # STEP 0 - Generate CSV files from dataset (run once, then comment this block)
     # -----------------------------------------------------------
     # generate_split_csvs(                                                              # DECOMMENT
@@ -26,30 +29,32 @@ def main():
     # )                                                                                 # DECOMMENT
     # print("[INFO] CSVs generated. You can now comment this section.")                 # DECOMMENT
     # -----------------------------------------------------------
-
-    # STEP 1 - Continue with training pipeline, dataset loading, etc.
-    print("[INFO] Main script is running...")
     
-    model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)
-    model.load_checkpoints()
+    # STEP 1 - Train the network
+    # -----------------------------------------------------------
+    # model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # trainer = tr.Trainer(model)                                                       # DECOMMENT
+    # trainer.training(1)                                                               # DECOMMENT
+    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    # -----------------------------------------------------------
     
-    img, filename =  load_random_inference_image(model.get_name())
-    species_pred_idx, disease_pred_idx = model.predict(img)
-    species_pred, disease_pred = get_label_names(species_pred_idx, disease_pred_idx)
-    print(filename)
-    print(species_pred)
-    print(disease_pred)
+    # STEP 2 - Obtain predictions (1st part) and use the LLM (2nd part)
+    # -----------------------------------------------------------
+    # 1st
+    # model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # model.load_checkpoints()                                                          # DECOMMENT
+    # img, filename =  load_random_inference_image(model.get_name())                    # DECOMMENT
+    # species_pred_idx, disease_pred_idx = model.predict(img)                           # DECOMMENT
+    # species_pred, disease_pred = get_label_names(species_pred_idx, disease_pred_idx)  # DECOMMENT
+    # print(filename)                                                                   # DECOMMENT
+    # print(species_pred)                                                               # DECOMMENT
+    # print(disease_pred)                                                               # DECOMMENT 
     
-    
-    # trainer = tr.Trainer(model)
-    # trainer.training(1)
-    # trainer.list_all_checkpoints()
-    
-    # giorgio = LeafConditionDescriber()
-    # messagefromgiorgio = giorgio.describe(species_pred, disease_pred)
-    # print(messagefromgiorgio)
-    
-
+    # 2nd
+    # giorgio = LeafConditionDescriber()                                                # DECOMMENT
+    # messagefromgiorgio = giorgio.describe(species_pred, disease_pred)                 # DECOMMENT
+    # print(messagefromgiorgio)                                                         # DECOMMENT
+    # -----------------------------------------------------------
 
 if __name__ == "__main__":
     main()
