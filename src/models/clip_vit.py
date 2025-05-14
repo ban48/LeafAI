@@ -50,8 +50,38 @@ class DualHeadCLIPViT(nn.Module):
         # Final probabilities vectors for species and diseases
         species_logits = self.species_head(features)
         disease_logits = self.disease_head(features)
-        return species_logits, disease_logits
+        return species_logits, disease_logits  
+    
+    def load_checkpoints(self, checkpoint_path=None, device="cpu"):
+        if checkpoint_path is None:
+            checkpoint_path = f"checkpoints/{self.model_name}/best_model.pt"
+        # Carica pesi fine-tuned
+        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
+        self.load_state_dict(checkpoint["model_state_dict"])
+        self.eval()
+        self.to(device)
+    
+    def predict(self, image_tensor, device = "cpu"):
+        """
+        Esegue l'inferenza su un'immagine singola.
 
+        Args:
+            image_tensor (torch.Tensor): tensor di input [1, 3, 224, 224]
+            checkpoint_path (str): path al checkpoint fine-tuned
+            device (torch.device): CPU / CUDA / MPS
+
+        Returns:
+            Tuple[int, int]: predizione (class index specie, class index malattia)
+        """
+        # Prepara input
+        image_tensor = image_tensor.to(device)
+
+        with torch.no_grad():
+            species_logits, disease_logits = self(image_tensor)
+            species_pred = torch.argmax(species_logits, dim=1).item()
+            disease_pred = torch.argmax(disease_logits, dim=1).item()
+
+        return species_pred, disease_pred
 
     def get_name(self):
         return self.model_name
