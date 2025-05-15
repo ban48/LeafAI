@@ -18,7 +18,7 @@ def generate_split_csvs(base_dir="data/raw/PlantVillage/", output_dir="data"):
     """
 
     # Loop through each split (train and val)
-    for split in ["/train", "/val"]:
+    for split in ["train", "val"]:
         rows = []  # This list will store data for the current split
 
         # Path to the current split folder
@@ -98,22 +98,27 @@ def load_random_inference_image(model_name: str, inference_subdir="data/raw/Plan
     if not image_files:
         raise FileNotFoundError(f"Nessuna immagine trovata in {inference_dir}")
 
-    # Scegli immagine random
-    chosen_file = random.choice(image_files)
-    full_path = os.path.join(inference_dir, chosen_file)
+    tensors = []
+    file_names = []
 
-    # Carica immagine
-    img = cv2.imread(full_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (224, 224))
-    
-    img = img.astype(np.float32) / 255.0
-    mean = np.array(mean, dtype=np.float32)
-    std = np.array(std, dtype=np.float32)
-    img = (img - mean) / std
-    tensor = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0) # Converte in tensor [1, 3, 224, 224]
+    for file_name in image_files:
+        full_path = os.path.join(inference_dir, file_name)
 
-    return tensor, chosen_file
+        # Carica immagine
+        img = cv2.imread(full_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (224, 224))
+        
+        img = img.astype(np.float32) / 255.0
+        mean = np.array(mean, dtype=np.float32)
+        std = np.array(std, dtype=np.float32)
+        img = (img - mean) / std
+        tensor = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0) # Converte in tensor [1, 3, 224, 224]
+
+        tensors.append(tensor)
+        file_names.append(file_name)
+
+    return tensors, file_names
 
 def get_label_names(species_idx, disease_idx, csv_path="data/class_counts_summary.csv"):
     df = pd.read_csv(csv_path)
