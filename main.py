@@ -1,6 +1,3 @@
-# main.py
-
-# Import function to generate CSVs from dataset folders
 from src.utils import generate_split_csvs
 from src.utils import load_random_inference_image
 from src.utils import get_label_names
@@ -40,7 +37,7 @@ def main():
     
     # STEP 2 - Obtain predictions (1st part) and use the LLM (2nd part)
     # -----------------------------------------------------------
-    # 1st
+    # # 1st
     # model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
     # model.load_checkpoints()                                                          # DECOMMENT
     # img, filename =  load_random_inference_image(model.get_name())                    # DECOMMENT
@@ -50,7 +47,7 @@ def main():
     # print(species_pred)                                                               # DECOMMENT
     # print(disease_pred)                                                               # DECOMMENT 
     
-    # 2nd
+    # # 2nd
     # giorgio = LeafConditionDescriber()                                                # DECOMMENT
     # messagefromgiorgio = giorgio.describe(species_pred, disease_pred)                 # DECOMMENT
     # print(messagefromgiorgio)                                                         # DECOMMENT

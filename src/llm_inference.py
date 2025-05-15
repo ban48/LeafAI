@@ -4,7 +4,7 @@ from llama_cpp import Llama
 
 # IMPORTANT: 
 # download the correct model https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/blob/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
-# pput the file in the folder "models"
+# put the file in the folder "models"
 
 class LeafConditionDescriber:
     def __init__(self, n_ctx=512, n_batch=8):
@@ -30,6 +30,7 @@ class LeafConditionDescriber:
     def describe(self, species: str, disease: str) -> str:
         """
         Generate a description and cure suggestion for a plant based on its species and disease.
+        If there is no desease, just say that the plant is healthy.
 
         Args:
             species (str): Name of the plant species.
@@ -38,15 +39,23 @@ class LeafConditionDescriber:
         Returns:
             str: Description and suggested cure.
         """
-        prompt = f"""
-        ### Instruction:
-        A {species} plant is affected by {disease}.
-        Write a sentence describing the condition of the leaf and suggest a possible cure.
+        if disease == "healthy":
+            prompt = f"""
+            ### Instruction:
+            Write a sentence describing the {disease} condition of the {species} plant's leaf.
 
-        ### Response:
-        """
+            ### Response:
+            """
+        else:   
+            prompt = f"""
+            ### Instruction:
+            A {species} plant is affected by {disease}.
+            Write a sentence describing the condition of the leaf and suggest a possible cure.
+
+            ### Response:
+            """
         # (prompt, max token used in the response, grade of creativiti 0<X<1, stops the model where it sees "###")
-        response = self.llm(prompt, max_tokens=100, temperature=0.7, stop=["###"])
+        response = self.llm(prompt, max_tokens=256, temperature=0.7, stop=["###"])
         
         # The LLM returns a dictionary, we have to take the intresting parts
         return response["choices"][0]["text"].strip()
