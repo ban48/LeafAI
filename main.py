@@ -29,25 +29,25 @@ def main():
     
     # STEP 1 - Train the network
     # -----------------------------------------------------------
-    # model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
-    # trainer = tr.Trainer(model)                                                       # DECOMMENT
-    # trainer.training(1)                                                               # DECOMMENT
-    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    trainer = tr.Trainer(model)                                                       # DECOMMENT
+    trainer.training(2)                                                               # DECOMMENT
+    trainer.list_all_checkpoints()                                                    # DECOMMENT
     # -----------------------------------------------------------
     
     # STEP 2 - Obtain predictions (1st part) and use the LLM (2nd part)
     # -----------------------------------------------------------
     # # 1st
-    model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)                # DECOMMENT
-    model.load_checkpoints()                                                            # DECOMMENT
-    imgs, filenames =  load_random_inference_image(model.get_name()) 
-    for img,filename in zip(imgs, filenames):                                                                   # DECOMMENT
-        species_pred_idx, disease_pred_idx = model.predict(img)                           # DECOMMENT
-        species_pred, disease_pred = get_label_names(species_pred_idx, disease_pred_idx)  # DECOMMENT
-        print(filename)                                                                   # DECOMMENT
-        print(species_pred)                                                               # DECOMMENT
-        print(disease_pred)                                                               # DECOMMENT
-        print("\n")                                                                       # DECOMMENT
+    # model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)                # DECOMMENT
+    # model.load_checkpoints()                                                            # DECOMMENT
+    # imgs, filenames =  load_random_inference_image(model.get_name()) 
+    # for img,filename in zip(imgs, filenames):                                                                   # DECOMMENT
+    #     species_pred_idx, disease_pred_idx = model.predict(img)                           # DECOMMENT
+    #     species_pred, disease_pred = get_label_names(species_pred_idx, disease_pred_idx)  # DECOMMENT
+    #     print(filename)                                                                   # DECOMMENT
+    #     print(species_pred)                                                               # DECOMMENT
+    #     print(disease_pred)                                                               # DECOMMENT
+    #     print("\n")                                                                       # DECOMMENT
     
     # # 2nd
     # giorgio = LeafConditionDescriber()                                                # DECOMMENT
