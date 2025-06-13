@@ -95,30 +95,26 @@ def load_random_inference_image(model_name: str, inference_subdir="data/raw/Plan
 
     # Leggi immagini disponibili
     image_files = [f for f in os.listdir(inference_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+    
     if not image_files:
         raise FileNotFoundError(f"Nessuna immagine trovata in {inference_dir}")
 
-    tensors = []
-    file_names = []
+    tensors, filenames, true_species, true_diseases = [], [], [], []
 
-    for file_name in image_files:
-        full_path = os.path.join(inference_dir, file_name)
-
-        # Carica immagine
-        img = cv2.imread(full_path)
+    for fname in image_files:
+        img = cv2.imread(os.path.join(inference_dir, fname))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (224, 224))
-        
-        img = img.astype(np.float32) / 255.0
-        mean = np.array(mean, dtype=np.float32)
-        std = np.array(std, dtype=np.float32)
-        img = (img - mean) / std
-        tensor = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0) # Converte in tensor [1, 3, 224, 224]
+        img = cv2.resize(img, (224, 224)).astype(np.float32) / 255.0
+        img = (img - np.array(mean)) / np.array(std)
+        tensors.append(torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).float())
+        filenames.append(fname)
 
-        tensors.append(tensor)
-        file_names.append(file_name)
+        label_raw = fname.split("-")[0]  # rimuove eventuale numero
+        species, disease = label_raw.split("___")
+        true_species.append(species)
+        true_diseases.append(disease)
 
-    return tensors, file_names
+    return tensors, filenames, true_species, true_diseases
 
 def get_label_names(species_idx, disease_idx, csv_path="data/class_counts_summary.csv"):
     df = pd.read_csv(csv_path)
