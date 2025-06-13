@@ -64,7 +64,7 @@ def generate_split_csvs(base_dir="data/raw/PlantVillage/", output_dir="data"):
         # Print confirmation message
         print(f"[✓] Created {output_csv} with {len(df)} rows.")
 
-def load_random_inference_image(model_name: str, inference_subdir="data/raw/PlantVillage/inference"):
+def load_inference_images(model_name: str, inference_subdir="data/raw/PlantVillage/inference"):
     """
     Carica un'immagine random da una directory di inference e la prepara per l'inference.
 
@@ -127,3 +127,40 @@ def get_label_names(species_idx, disease_idx, csv_path="data/class_counts_summar
     disease_name = disease_list[disease_idx]
 
     return species_name, disease_name
+
+
+def evaluate_topk_accuracy(
+    topk_species_preds: list[list[int]],
+    topk_disease_preds: list[list[int]],
+    true_species: list[str],
+    true_diseases: list[str]
+) -> dict:
+    """
+    Calcola le metriche di accuratezza usando top-k predizioni in formato indice,
+    confrontando i nomi tramite get_label_names.
+    """
+    total = len(true_species)
+    species_correct = 0
+    disease_correct = 0
+    at_least_one_correct = 0
+    both_correct = 0
+
+    for i in range(total):
+        # Confronta nome vero con i nomi predetti nella top-k
+        pred_species_names = [get_label_names(idx, 0)[0] for idx in topk_species_preds[i]]
+        pred_disease_names = [get_label_names(0, idx)[1] for idx in topk_disease_preds[i]]
+
+        sp_correct = true_species[i] in pred_species_names
+        ds_correct = true_diseases[i] in pred_disease_names
+
+        species_correct += sp_correct
+        disease_correct += ds_correct
+        at_least_one_correct += sp_correct or ds_correct
+        both_correct += sp_correct and ds_correct
+
+    return {
+        "species_topk_acc": species_correct / total,
+        "disease_topk_acc": disease_correct / total,
+        "at_least_one_topk_acc": at_least_one_correct / total,
+        "both_correct_topk_acc": both_correct / total
+    }

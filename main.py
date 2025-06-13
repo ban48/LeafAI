@@ -1,5 +1,6 @@
 from src.utils import generate_split_csvs
-from src.utils import load_random_inference_image
+from src.utils import load_inference_images
+from src.utils import evaluate_topk_accuracy
 from src.utils import get_label_names
 
 from src.models.dinov2 import DualHeadDINOv2
@@ -40,31 +41,33 @@ def main():
     # # 1st
     model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)                # DECOMMENT
     model.load_checkpoints()                                                            # DECOMMENT
-    imgs, filenames, true_species, true_diseases = load_random_inference_image(model.get_name())
+    imgs, filenames, true_species, true_diseases = load_inference_images(model.get_name())
     
-    correct_species = 0
-    correct_disease = 0
-    correct_both = 0
-    correct_at_least_one = 0
-    total = len(imgs)
-    
-    
-    for img, true_s, true_d in zip(imgs, true_species, true_diseases):
-        pred_s_idx, pred_d_idx = model.predict(img)
-        pred_s, pred_d = get_label_names(pred_s_idx, pred_d_idx)
+    # Contenitori per top-1 e top-3
+    top1_species_preds, top3_species_preds = [], []
+    top1_disease_preds, top3_disease_preds = [], []
 
-        is_s = pred_s == true_s
-        is_d = pred_d == true_d
+    # Predizioni
+    for img in imgs:
+        species_topk, disease_topk = model.predict_topk(img, k=3)
 
-        correct_species += is_s
-        correct_disease += is_d
-        correct_both += is_s and is_d
-        correct_at_least_one += is_s or is_d
+        # Salvo top-1 (primo elemento) e top-3
+        top1_species_preds.append([species_topk[0]])
+        top3_species_preds.append(species_topk)
 
-    print(f"Percentuale specie corrette: {correct_species / total:.2%}")
-    print(f"Percentuale malattie corrette: {correct_disease / total:.2%}")
-    print(f"Percentuale almeno una corretta: {correct_at_least_one / total:.2%}")
-    print(f"Percentuale entrambe corrette: {correct_both / total:.2%}")
+        top1_disease_preds.append([disease_topk[0]])
+        top3_disease_preds.append(disease_topk)
+
+    # Valutazioni
+    print("\n[Correct Class Accuracy]")
+    results_top1 = evaluate_topk_accuracy(top1_species_preds, top1_disease_preds, true_species, true_diseases)
+    for key, value in results_top1.items():
+        print(f"{key}: {value:.2%}")
+
+    print("\n[Top-3 Accuracy]")
+    results_top3 = evaluate_topk_accuracy(top3_species_preds, top3_disease_preds, true_species, true_diseases)
+    for key, value in results_top3.items():
+        print(f"{key}: {value:.2%}")
     
     # # 2nd
     # giorgio = LeafConditionDescriber()                                                # DECOMMENT

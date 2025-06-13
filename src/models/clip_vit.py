@@ -61,9 +61,9 @@ class DualHeadCLIPViT(nn.Module):
         self.eval()
         self.to(device)
     
-    def predict(self, image_tensor, device = "cpu"):
+    def predict_topk(self, image_tensor,  k=1, device = "cpu"):
         """
-        Esegue l'inferenza su un'immagine singola.
+        Esegue l'inferenza su un'immagine singola, restituendo le top-k classi predette.
 
         Args:
             image_tensor (torch.Tensor): tensor di input [1, 3, 224, 224]
@@ -71,17 +71,17 @@ class DualHeadCLIPViT(nn.Module):
             device (torch.device): CPU / CUDA / MPS
 
         Returns:
-            Tuple[int, int]: predizione (class index specie, class index malattia)
+            Tuple[List[int], List[int]]: top-k classi predette per specie e malattia
         """
         # Prepara input
         image_tensor = image_tensor.to(device)
 
         with torch.no_grad():
             species_logits, disease_logits = self(image_tensor)
-            species_pred = torch.argmax(species_logits, dim=1).item()
-            disease_pred = torch.argmax(disease_logits, dim=1).item()
+            topk_species = torch.topk(species_logits, k, dim=1).indices.squeeze(0).tolist()
+            topk_diseases = torch.topk(disease_logits, k, dim=1).indices.squeeze(0).tolist()
 
-        return species_pred, disease_pred
+        return topk_species, topk_diseases
 
     def get_name(self):
         return self.model_name
