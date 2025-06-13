@@ -325,3 +325,6 @@ class Trainer:
             print(f"     Best F1 Macro (Species):  {checkpoint['best_f1_species']:.4f}")
             print(f"     Best F1 Macro (Disease):  {checkpoint['best_f1_disease']:.4f}")
             print(f"     Best F1 Macro (Average):  {checkpoint['best_f1_macro']:.4f}")
+            print(f"     Loss (Species):  {checkpoint['current_loss_species']:.4f}")
+            print(f"     Loss (Disease):  {checkpoint['current_loss_disease']:.4f}")
+            print(f"     Loss (Average):  {checkpoint['current_loss']:.4f}")
