@@ -175,6 +175,8 @@ class Trainer:
             print(f"[Epoch {epoch+1}] Train Loss: {self.current_loss:.4f} (species: {self.current_loss_species:.4f}, disease: {self.current_loss_disease:.4f})")
             
             self.validate(epoch)
+            if self.early_stop_counter >= self.patience:
+                break
 
 
 
@@ -232,7 +234,7 @@ class Trainer:
             print(f"[INFO] No improvement. Early stop counter: {self.early_stop_counter}/{self.patience}")
             if self.early_stop_counter >= self.patience:
                 print("[INFO] Early stopping triggered.")
-                exit(0)
+                return
         else:
             self.early_stop_counter = 0
 
