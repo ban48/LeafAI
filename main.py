@@ -33,31 +33,31 @@ def main():
     print("[INFO] Training ResNet18")
     resnet = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
     trainer = tr.Trainer(resnet)                                                       # DECOMMENT
-    trainer.training(2)                                                               # DECOMMENT
+    trainer.training(30)                                                               # DECOMMENT
     trainer.list_all_checkpoints()                                                    # DECOMMENT
     print("[INFO] End training ResNet18")
     print("[INFO] Training ViT")
     vit = DualHeadViT(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
     trainer = tr.Trainer(vit)                                                       # DECOMMENT
-    trainer.training(2)                                                               # DECOMMENT
+    trainer.training(30)                                                               # DECOMMENT
     trainer.list_all_checkpoints()                                                    # DECOMMENT
     print("[INFO] End training ViT")
     print("[INFO] Training CLIPResNet")
     clipresnet = DualHeadCLIPResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
     trainer = tr.Trainer(clipresnet)                                                       # DECOMMENT
-    trainer.training(2)                                                               # DECOMMENT
+    trainer.training(30)                                                               # DECOMMENT
     trainer.list_all_checkpoints()                                                    # DECOMMENT
     print("[INFO] End training CLIPResNet")
     print("[INFO] Training CLIPViT")
     clipvit = DualHeadCLIPViT(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
     trainer = tr.Trainer(clipvit)                                                       # DECOMMENT
-    trainer.training(2)                                                               # DECOMMENT
+    trainer.training(30)                                                               # DECOMMENT
     trainer.list_all_checkpoints()                                                    # DECOMMENT
     print("[INFO] End training CLIPViT")
     print("[INFO] Training DINOv2")
     dino = DualHeadDINOv2(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
     trainer = tr.Trainer(dino)                                                       # DECOMMENT
-    trainer.training(2)                                                               # DECOMMENT
+    trainer.training(30)                                                               # DECOMMENT
     trainer.list_all_checkpoints()                                                    # DECOMMENT
     print("[INFO] End training DINOv2")
     # -----------------------------------------------------------
