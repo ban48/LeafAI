@@ -9,7 +9,7 @@ import glob
 
 
 class Trainer:
-    def __init__(self, model, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3):
+    def __init__(self, model, use_f1=False, train_csv="data/train.csv", val_csv="data/val.csv", batch_size=32, lr=1e-3):
         """
         Training class specifically for our ResNet-18
 
@@ -38,6 +38,7 @@ class Trainer:
         # Init
         # ---------------------------------------------------------------
         self.model = model
+        self.use_f1 = use_f1
         self.train_csv = train_csv
         self.val_csv = val_csv
         self.batch_size = batch_size
@@ -96,7 +97,7 @@ class Trainer:
         self.loss_diseases_calc = nn.CrossEntropyLoss() 
 
         # Used Adam as GD
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
         self.start_epoch = 0 
         
@@ -112,6 +113,9 @@ class Trainer:
         self.current_loss_disease = 0.0
         self.current_loss = 0.0
         
+        # --- puntatore alla metrica usata per early-stop ---
+        self.best_metric = -float("inf")
+        
         # Resume training if checkpoint exists
         if os.path.exists(self.param_path):
             checkpoint = torch.load(self.param_path, map_location=self.device)                   # Loads the checkpoint file and maps the tensors to the current device (CPU, CUDA, MPS)
@@ -126,6 +130,23 @@ class Trainer:
             self.best_acc_species = checkpoint["best_acc_species"]
             self.best_acc_disease = checkpoint["best_acc_disease"]
             self.best_acc_avg = checkpoint["best_acc_avg"]
+            
+            #  se il checkpoint è stato salvato prima delle modifiche
+            #  potresti non avere la chiave 'best_metric'; gestiscila con get
+            self.best_metric = checkpoint.get("best_metric", checkpoint.get("best_f1_macro", 0.0) )  # fallback
+            ckpt_metric = checkpoint.get("metric_name", "ACC")
+            current_metric_name = "F1" if self.use_f1 else "ACC"
+
+            if ckpt_metric != current_metric_name:
+                print(f"[WARN] Checkpoint metric ({ckpt_metric}) "
+                    f"different from requested ({current_metric_name}).")
+
+                # opzione A: ereditare la metrica del checkpoint
+                # self.use_f1 = (ckpt_metric == "F1")
+
+                # opzione B (default qui sotto): cambio metrica e reset best_metric
+                self.best_metric = -float("inf")
+            
             print(f"[INFO] Resumed from checkpoint: epoch {self.start_epoch} (best acc: species={self.best_acc_species:.4f}, disease={self.best_acc_disease:.4f}, avg={self.best_acc_avg:.4f})")
 
         
@@ -229,9 +250,12 @@ class Trainer:
         print(f"[Epoch {epoch+1}] Val F1 Macro  - Species: {f1_species:.4f} | Disease: {f1_disease:.4f} | Avg: {f1_macro:.4f}")
 
         # Early stopping logic
-        if f1_macro <= self.best_f1_macro:
+        current_metric = f1_macro if self.use_f1 else avg_val_acc
+
+        if current_metric <= self.best_metric:
             self.early_stop_counter += 1
-            print(f"[INFO] No improvement. Early stop counter: {self.early_stop_counter}/{self.patience}")
+            print(f"[INFO] No improvement ({'F1' if self.use_f1 else 'ACC'}). "
+                  f"Early stop counter: {self.early_stop_counter}/{self.patience}")
             if self.early_stop_counter >= self.patience:
                 print("[INFO] Early stopping triggered.")
                 return
@@ -244,7 +268,8 @@ class Trainer:
         # ---------------------------------------------
 
         # Save model parameters only if it's the best so far
-        if f1_macro > self.best_f1_macro:
+        if current_metric > self.best_metric:
+            self.best_metric      = current_metric
             self.best_f1_macro = f1_macro
             self.best_f1_species = f1_species
             self.best_f1_disease = f1_disease
@@ -265,8 +290,13 @@ class Trainer:
                 "best_acc_species": acc_species,
                 "best_acc_disease": acc_disease,
                 "best_acc_avg": avg_val_acc,
+                
+                # --- best metric generico -------------
+                "best_metric": self.best_metric,
+                "metric_name": "F1" if self.use_f1 else "ACC",
+                
             }, self.param_path)
-            print(f"[INFO] New best model saved to {self.param_path}")
+            print(f"[INFO] New best model saved (metric={'F1' if self.use_f1 else 'ACC'} : {self.best_metric:.4f})")
         
         # Save training log of current epoch (no model weights)
         log_path = os.path.join(self.checkpoint_dir, f"log_epoch_{epoch+1}.pt")
@@ -298,6 +328,10 @@ class Trainer:
             "best_acc_disease": self.best_acc_disease,
             "best_acc_avg": self.best_acc_avg,
             
+            # --- metriche correnti ---
+            "current_metric": current_metric,
+            "metric_name": "F1" if self.use_f1 else "ACC",
+            
         }, log_path)
         print(f"[INFO] Checkpoint saved: {epoch} acc_species: {acc_species} acc_disease: {acc_disease} acc_average: {avg_val_acc}")
         print(f"[INFO] Checkpoint saved: {epoch} f1_species: {f1_species} f1_disease: {f1_disease} f1_average: {f1_macro}")
@@ -313,6 +347,7 @@ class Trainer:
         
         for file in checkpoint_files:
             checkpoint = torch.load(file, map_location="cpu")
+            metric_name = checkpoint.get("metric_name", "ACC")
             print(f" - {file}:")
             print(f"     Epoch:                    {checkpoint['epoch']+1}")
             print(f"     Val Accuracy (Species):   {checkpoint['current_acc_species']:.4f}")
@@ -330,3 +365,4 @@ class Trainer:
             print(f"     Loss (Species):  {checkpoint['current_loss_species']:.4f}")
             print(f"     Loss (Disease):  {checkpoint['current_loss_disease']:.4f}")
             print(f"     Loss (Average):  {checkpoint['current_loss']:.4f}")
+            print(f"     Training metric: {metric_name}")
