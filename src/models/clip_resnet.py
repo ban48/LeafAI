@@ -3,7 +3,7 @@ import torch.nn as nn
 import open_clip
 
 class DualHeadCLIPResNet(nn.Module):
-    def __init__(self, num_species_classes, num_disease_classes, clip_model_name="RN50", pretrained="openai"):
+    def __init__(self, num_species_classes, num_disease_classes, clip_model_name="RN50-quickgelu", pretrained="openai"):
         """
         Custom model using CLIP (ResNet) as frozen backbone and two classification heads. Only the image part is used.
 

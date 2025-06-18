@@ -30,70 +30,72 @@ def main():
     
     # STEP 1 - Train the network
     # -----------------------------------------------------------
-    print("[INFO] Training ResNet18")
-    resnet = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
-    trainer = tr.Trainer(resnet)                                                       # DECOMMENT
-    trainer.training(30)                                                               # DECOMMENT
-    trainer.list_all_checkpoints()                                                    # DECOMMENT
-    print("[INFO] End training ResNet18")
-    print("[INFO] Training ViT")
-    vit = DualHeadViT(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
-    trainer = tr.Trainer(vit)                                                       # DECOMMENT
-    trainer.training(30)                                                               # DECOMMENT
-    trainer.list_all_checkpoints()                                                    # DECOMMENT
-    print("[INFO] End training ViT")
-    print("[INFO] Training CLIPResNet")
-    clipresnet = DualHeadCLIPResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
-    trainer = tr.Trainer(clipresnet)                                                       # DECOMMENT
-    trainer.training(30)                                                               # DECOMMENT
-    trainer.list_all_checkpoints()                                                    # DECOMMENT
-    print("[INFO] End training CLIPResNet")
-    print("[INFO] Training CLIPViT")
-    clipvit = DualHeadCLIPViT(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
-    trainer = tr.Trainer(clipvit)                                                       # DECOMMENT
-    trainer.training(30)                                                               # DECOMMENT
-    trainer.list_all_checkpoints()                                                    # DECOMMENT
-    print("[INFO] End training CLIPViT")
-    print("[INFO] Training DINOv2")
-    dino = DualHeadDINOv2(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
-    trainer = tr.Trainer(dino)                                                       # DECOMMENT
-    trainer.training(30)                                                               # DECOMMENT
-    trainer.list_all_checkpoints()                                                    # DECOMMENT
-    print("[INFO] End training DINOv2")
+    # print("[INFO] Training ResNet18")
+    # resnet = DualHeadResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # trainer = tr.Trainer(resnet)                                                       # DECOMMENT
+    # trainer.training(30)                                                               # DECOMMENT
+    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    # print("[INFO] End training ResNet18")
+    # print("[INFO] Training ViT")
+    # vit = DualHeadViT(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # trainer = tr.Trainer(vit)                                                       # DECOMMENT
+    # trainer.training(30)                                                               # DECOMMENT
+    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    # print("[INFO] End training ViT")
+    # print("[INFO] Training CLIPResNet")
+    # clipresnet = DualHeadCLIPResNet(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # trainer = tr.Trainer(clipresnet)                                                       # DECOMMENT
+    # trainer.training(30)                                                               # DECOMMENT
+    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    # print("[INFO] End training CLIPResNet")
+    # print("[INFO] Training CLIPViT")
+    # clipvit = DualHeadCLIPViT(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # trainer = tr.Trainer(clipvit)                                                       # DECOMMENT
+    # trainer.training(30)                                                               # DECOMMENT
+    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    # print("[INFO] End training CLIPViT")
+    # print("[INFO] Training DINOv2")
+    # dino = DualHeadDINOv2(num_species_classes=12, num_disease_classes=20)            # DECOMMENT
+    # trainer = tr.Trainer(dino)                                                       # DECOMMENT
+    # trainer.training(30)                                                               # DECOMMENT
+    # trainer.list_all_checkpoints()                                                    # DECOMMENT
+    # print("[INFO] End training DINOv2")
     # -----------------------------------------------------------
     
     # STEP 2 - Obtain predictions (1st part) and use the LLM (2nd part)
     # -----------------------------------------------------------
     # # 1st
-    # model = DualHeadResNet(num_species_classes=12, num_disease_classes=20)                # DECOMMENT
-    # model.load_checkpoints()                                                            # DECOMMENT
-    # imgs, filenames, true_species, true_diseases = load_inference_images(model.get_name())
+    model = DualHeadDINOv2(num_species_classes=12, num_disease_classes=20)                # DECOMMENT
+    model.load_checkpoints()                                                            # DECOMMENT
+    imgs, filenames, true_species, true_diseases = load_inference_images(model.get_name())
     
-    # # Contenitori per top-1 e top-3
-    # top1_species_preds, top3_species_preds = [], []
-    # top1_disease_preds, top3_disease_preds = [], []
+    # Contenitori per top-1 e top-3
+    top1_species_preds, top3_species_preds = [], []
+    top1_disease_preds, top3_disease_preds = [], []
 
-    # # Predizioni
-    # for img in imgs:
-    #     species_topk, disease_topk = model.predict_topk(img, k=3)
+    # Predizioni
+    for img in imgs:
+        species_topk, disease_topk = model.predict_topk(img, k=3)
 
-    #     # Salvo top-1 (primo elemento) e top-3
-    #     top1_species_preds.append([species_topk[0]])
-    #     top3_species_preds.append(species_topk)
+        # Salvo top-1 (primo elemento) e top-3
+        top1_species_preds.append([species_topk[0]])
+        top3_species_preds.append(species_topk)
 
-    #     top1_disease_preds.append([disease_topk[0]])
-    #     top3_disease_preds.append(disease_topk)
+        top1_disease_preds.append([disease_topk[0]])
+        top3_disease_preds.append(disease_topk)
 
-    # # Valutazioni
-    # print("\n[Correct Class Accuracy]")
-    # results_top1 = evaluate_topk_accuracy(top1_species_preds, top1_disease_preds, true_species, true_diseases)
-    # for key, value in results_top1.items():
-    #     print(f"{key}: {value:.2%}")
+    # Valutazioni
+    print("\n")
+    print(model.get_name())
+    print("[Correct Class Accuracy]")
+    results_top1 = evaluate_topk_accuracy(top1_species_preds, top1_disease_preds, true_species, true_diseases)
+    for key, value in results_top1.items():
+        print(f"{key}: {value:.2%}")
 
-    # print("\n[Top-3 Accuracy]")
-    # results_top3 = evaluate_topk_accuracy(top3_species_preds, top3_disease_preds, true_species, true_diseases)
-    # for key, value in results_top3.items():
-    #     print(f"{key}: {value:.2%}")
+    print("\n[Top-3 Accuracy]")
+    results_top3 = evaluate_topk_accuracy(top3_species_preds, top3_disease_preds, true_species, true_diseases)
+    for key, value in results_top3.items():
+        print(f"{key}: {value:.2%}")
     
     # # 2nd
     # giorgio = LeafConditionDescriber()                                                # DECOMMENT
