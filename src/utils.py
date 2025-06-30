@@ -66,17 +66,17 @@ def generate_split_csvs(base_dir="data/raw/PlantVillage/", output_dir="data"):
 
 def load_inference_images(model_name: str, inference_subdir="data/raw/PlantVillage/inference"):
     """
-    Carica un'immagine random da una directory di inference e la prepara per l'inference.
+    Load a random image from an inference directory and prepare it for inference
 
     Args:
-        model_name (str): modello usato, es. "ResNet18", "CLIPViT", etc.
-        inference_subdir (str): percorso relativo alla cartella immagini (rispetto allo script chiamante)
+        model_name (str): model used, e.g. "ResNet18", "CLIPViT", ...
+        inference_subdir (str): relative directory for inference directory
 
     Returns:
-        torch.Tensor: immagine preprocessata [1, 3, 224, 224]
-        str: nome del file scelto
+        torch.Tensor: tensor [1, 3, 224, 224] (preprocessed image)
+        str: file name
     """
-    # Mappa delle normalizzazioni per tipo modello
+    # Normalization map depending on model type
     stats = {
         "ResNet18":   ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         "ViT":        ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
@@ -88,12 +88,12 @@ def load_inference_images(model_name: str, inference_subdir="data/raw/PlantVilla
 
     mean, std = stats.get(model_name, stats["default"])
 
-    # Percorso assoluto alla cartella "inference"
+    # Absolute path for inference directory
     base_dir = os.path.dirname(os.path.abspath(__file__))
     inference_dir = os.path.join(base_dir, "..", inference_subdir)
     inference_dir = os.path.abspath(inference_dir)
 
-    # Leggi immagini disponibili
+    # Read avaible images
     image_files = [f for f in os.listdir(inference_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
     
     if not image_files:
@@ -109,7 +109,7 @@ def load_inference_images(model_name: str, inference_subdir="data/raw/PlantVilla
         tensors.append(torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).float())
         filenames.append(fname)
 
-        label_raw = fname.split("-")[0]  # rimuove eventuale numero
+        label_raw = fname.split("-")[0]  # remove eventual number
         species, disease = label_raw.split("___")
         true_species.append(species)
         true_diseases.append(disease)
@@ -119,7 +119,7 @@ def load_inference_images(model_name: str, inference_subdir="data/raw/PlantVilla
 def get_label_names(species_idx, disease_idx, csv_path="data/class_counts_summary.csv"):
     df = pd.read_csv(csv_path)
 
-    # Ricava le liste ordinate dei nomi
+    # Sorted list of names
     species_list = sorted(df['species'].unique())
     disease_list = sorted(df['disease'].unique())
 
@@ -136,8 +136,8 @@ def evaluate_topk_accuracy(
     true_diseases: list[str]
 ) -> dict:
     """
-    Calcola le metriche di accuratezza usando top-k predizioni in formato indice,
-    confrontando i nomi tramite get_label_names.
+    Compute accuracy metrics using top-k predictions in index format,
+    comparing names with get_label_names.
     """
     total = len(true_species)
     species_correct = 0
@@ -146,7 +146,7 @@ def evaluate_topk_accuracy(
     both_correct = 0
 
     for i in range(total):
-        # Confronta nome vero con i nomi predetti nella top-k
+        # Compare real name with the predicted ones
         pred_species_names = [get_label_names(idx, 0)[0] for idx in topk_species_preds[i]]
         pred_disease_names = [get_label_names(0, idx)[1] for idx in topk_disease_preds[i]]
 

@@ -113,7 +113,7 @@ class Trainer:
         self.current_loss_disease = 0.0
         self.current_loss = 0.0
         
-        # --- puntatore alla metrica usata per early-stop ---
+        # --- pointer to used metrics for early-stop ---
         self.best_metric = -float("inf")
         
         # Resume training if checkpoint exists
@@ -131,8 +131,8 @@ class Trainer:
             self.best_acc_disease = checkpoint["best_acc_disease"]
             self.best_acc_avg = checkpoint["best_acc_avg"]
             
-            #  se il checkpoint è stato salvato prima delle modifiche
-            #  potresti non avere la chiave 'best_metric'; gestiscila con get
+            #  if checkpoint has been saved before changes,
+            #  we might not have the key 'best_metric'. We handle it with 'get'
             self.best_metric = checkpoint.get("best_metric", checkpoint.get("best_f1_macro", 0.0) )  # fallback
             ckpt_metric = checkpoint.get("metric_name", "ACC")
             current_metric_name = "F1" if self.use_f1 else "ACC"
@@ -141,10 +141,10 @@ class Trainer:
                 print(f"[WARN] Checkpoint metric ({ckpt_metric}) "
                     f"different from requested ({current_metric_name}).")
 
-                # opzione A: ereditare la metrica del checkpoint
+                # opzione A: use the same metrics of checkpoint
                 # self.use_f1 = (ckpt_metric == "F1")
 
-                # opzione B (default qui sotto): cambio metrica e reset best_metric
+                # opzione B (default): metrics change and best_metric reset
                 self.best_metric = -float("inf")
             
             print(f"[INFO] Resumed from checkpoint: epoch {self.start_epoch} (best acc: species={self.best_acc_species:.4f}, disease={self.best_acc_disease:.4f}, avg={self.best_acc_avg:.4f})")
@@ -328,7 +328,7 @@ class Trainer:
             "best_acc_disease": self.best_acc_disease,
             "best_acc_avg": self.best_acc_avg,
             
-            # --- metriche correnti ---
+            # --- current metrics ---
             "current_metric": current_metric,
             "metric_name": "F1" if self.use_f1 else "ACC",
             

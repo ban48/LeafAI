@@ -54,7 +54,7 @@ class LeafConditionDescriber:
 
             ### Response:
             """
-        # (prompt, max token used in the response, grade of creativiti 0<X<1, stops the model where it sees "###")
+        # (prompt, max token used in the response, grade of creativity in range [0, 1], stops the model where it sees "###")
         response = self.llm(prompt, max_tokens=256, temperature=0.7, stop=["###"])
         
         # The LLM returns a dictionary, we have to take the intresting parts

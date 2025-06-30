@@ -45,7 +45,7 @@ class DualHeadCLIPResNet(nn.Module):
 
         # Frozen CLIP backbone (gradient not computed)
         with torch.no_grad():
-            features = self.clip_model.encode_image(x)
+            features = self.clip_model.encode_image(x) # CLS token automatically managed
 
         # Final probabilities vectors for species and diseases 
         species_logits = self.species_head(features)
@@ -55,7 +55,8 @@ class DualHeadCLIPResNet(nn.Module):
     def load_checkpoints(self, checkpoint_path=None, device="cpu"):
         if checkpoint_path is None:
             checkpoint_path = f"checkpoints/{self.model_name}/best_model.pt"
-        # Carica pesi fine-tuned
+
+        # Load weights
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
         self.load_state_dict(checkpoint["model_state_dict"])
         self.eval()
@@ -63,17 +64,17 @@ class DualHeadCLIPResNet(nn.Module):
     
     def predict_topk(self, image_tensor,  k=1, device = "cpu"):
         """
-        Esegue l'inferenza su un'immagine singola, restituendo le top-k classi predette.
+        Inference on single image, obtaining the top-k accuracy
 
         Args:
-            image_tensor (torch.Tensor): tensor di input [1, 3, 224, 224]
-            checkpoint_path (str): path al checkpoint fine-tuned
+            image_tensor (torch.Tensor): input tensor [1, 3, 224, 224]
+            k (int): how many best accuracies to pick
             device (torch.device): CPU / CUDA / MPS
 
         Returns:
-            Tuple[List[int], List[int]]: top-k classi predette per specie e malattia
+            Tuple[List[int], List[int]]: top-k predicted classes for species e disease
         """
-        # Prepara input
+        # Prepare input
         image_tensor = image_tensor.to(device)
 
         with torch.no_grad():

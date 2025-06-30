@@ -1,4 +1,5 @@
-LOG of important things
+DISCLAIMER: log of important things discussed between the students involved in the project. The following material has been used in the paper for the relative exam.
+
 
 06/05
 "PlantVillage" dataset -> good, but some relevant informations about species/diseases are missing. In few words, for some species only "healthy" or "ill" images existed.
